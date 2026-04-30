@@ -111,6 +111,8 @@ Commands will auto-complete when you press Tab.
 
 Documents are stored as individual files in a `docs/` directory at the project root. All MCP tools and resources read from and write to this directory directly — there is no in-memory store.
 
+**Supported formats:** plain text files only (e.g. `.md`, `.txt`, `.json`, `.csv`). Binary formats such as `.pdf` and `.docx` are not supported — attempting to read or write them will return an error. Convert binary documents to a plain text format before adding them to the store.
+
 ## Development
 
 ### Linting and Typing Check

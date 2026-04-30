@@ -8,7 +8,9 @@ An MCP server and CLI chat interface for Claude, implementing tools, resources, 
 
 Documents are stored as individual files in a `docs/` directory on disk. The server reads from and writes to this directory directly. There is no in-memory dict — all operations go to the filesystem.
 
-Filenames (e.g. `report.pdf`, `deposition.md`) serve as the document identifier throughout. The term "filename" is used consistently in all code and user-facing descriptions.
+Filenames (e.g. `notes.txt`, `deposition.md`) serve as the document identifier throughout. The term "filename" is used consistently in all code and user-facing descriptions.
+
+**Supported formats:** plain text files only (e.g. `.md`, `.txt`, `.json`, `.csv`). Binary formats (`.pdf`, `.docx`, etc.) are not supported. Any tool or resource that attempts to read or write a binary file must raise an error: `"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."`
 
 ## Tools
 
