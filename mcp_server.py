@@ -1,23 +1,40 @@
+import os
+
 from mcp.server.fastmcp import FastMCP
+
+DOCS_DIR = "docs"
+BINARY_EXTENSIONS = {
+    ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico",
+    ".zip", ".tar", ".gz", ".rar", ".7z",
+    ".mp3", ".mp4", ".avi", ".mov", ".wav",
+    ".exe", ".dll", ".so", ".dylib",
+    ".db", ".sqlite",
+}
 
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
 
-docs = {
-    "deposition.md": "This deposition covers the testimony of Angela Smith, P.E.",
-    "report.pdf": "The report details the state of a 20m condenser tower.",
-    "financials.docx": "These financials outline the project's budget and expenditures.",
-    "outlook.pdf": "This document presents the projected future performance of the system.",
-    "plan.md": "The plan outlines the steps for the project's implementation.",
-    "spec.txt": "These specifications define the technical requirements for the equipment.",
-}
+@mcp.tool()
+def create_doc(filename: str, content: str) -> str:
+    if os.path.basename(filename) != filename or filename.startswith("."):
+        raise ValueError(f"Invalid filename: '{filename}'.")
 
-# TODO: Write a tool to read a doc
-# TODO: Write a tool to edit a doc
-# TODO: Write a resource to return all doc id's
-# TODO: Write a resource to return the contents of a particular doc
-# TODO: Write a prompt to rewrite a doc in markdown format
-# TODO: Write a prompt to summarize a doc
+    _, ext = os.path.splitext(filename)
+    if ext.lower() in BINARY_EXTENSIONS:
+        raise ValueError(
+            f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
+        )
+
+    path = os.path.join(DOCS_DIR, filename)
+    if os.path.exists(path):
+        raise FileExistsError(f"Document '{filename}' already exists.")
+
+    os.makedirs(DOCS_DIR, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+
+    return f"Document '{filename}' created successfully."
 
 
 if __name__ == "__main__":
