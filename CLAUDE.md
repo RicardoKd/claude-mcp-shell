@@ -1,0 +1,94 @@
+# Claude MCP Shell
+
+## Project Overview
+
+An MCP server and CLI chat interface for Claude, implementing tools, resources, and prompts through a document store.
+
+## Document Store
+
+Documents are stored as individual files in a `docs/` directory on disk. The server reads from and writes to this directory directly. There is no in-memory dict — all operations go to the filesystem.
+
+Filenames (e.g. `report.pdf`, `deposition.md`) serve as the document identifier throughout. The term "filename" is used consistently in all code and user-facing descriptions.
+
+## Tools
+
+### `read_doc`
+
+```python
+def read_doc(filename: str) -> str
+```
+
+- Read and return the content of `docs/{filename}`.
+- Raise an error if the file does not exist.
+- **Purpose:** programmatic access within agentic workflows.
+
+### `create_doc`
+
+```python
+def create_doc(filename: str, content: str) -> str
+```
+
+- Create a new file at `docs/{filename}` with the given content.
+- Raise an error if the file already exists.
+- Return a confirmation string on success.
+
+### `edit_doc`
+
+```python
+def edit_doc(
+    filename: str = Field(description="Filename of the document to edit"),
+    old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
+    new_str: str = Field(description="The new text to insert in place of the old text.")
+) -> str
+```
+
+- Replace the first exact occurrence of `old_str` with `new_str` in `docs/{filename}`.
+- Raise an error if the file does not exist or if `old_str` is not found.
+- Return: `"Document '{filename}' updated successfully."`
+
+### `delete_doc`
+
+```python
+def delete_doc(filename: str) -> str
+```
+
+- Remove `docs/{filename}` from disk.
+- Raise an error if the file does not exist.
+- Return a confirmation string on success.
+
+## Resources
+
+### `docs://list`
+
+- Reads the `docs/` directory on disk.
+- Returns all filenames as newline-separated plain text: `"deposition.md\nreport.pdf\n..."`
+
+### `docs://{filename}`
+
+- Return the content of `docs/{filename}`.
+- Raise an error if the file does not exist.
+- **Purpose:** embedding document content directly into model context.
+
+> Both `read_doc` (tool) and `docs://{filename}` (resource) return doc content. The distinction is intentional: the resource is for embedding content into model context; the tool is for programmatic access in agentic workflows.
+
+## Prompts
+
+### `rewrite-as-markdown`
+
+```python
+def rewrite_as_markdown(filename: str)
+```
+
+- Read the content of `docs/{filename}`.
+- If the file does not exist, return: `"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"`
+- Otherwise return a prompt asking the model to rewrite the content in markdown format.
+
+### `summarize_doc`
+
+```python
+def summarize_doc(filename: str)
+```
+
+- Read the content of `docs/{filename}`.
+- If the file does not exist, return: `"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"`
+- Otherwise return a prompt asking the model to summarize the content.
