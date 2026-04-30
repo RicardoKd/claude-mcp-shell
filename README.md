@@ -1,20 +1,30 @@
-# MCP Chat
+# Claude MCP Shell
 
-CLI chat interface for Claude with MCP tool integration, document retrieval, and slash command support.
+An MCP server and CLI chat interface for Claude, implementing tools, resources, and prompts through a document store.
+
+## Features
+
+- Interactive CLI chat with Claude (powered by the Anthropic API)
+- Document management via MCP tools (`read_doc`, `create_doc`, `edit_doc`, `delete_doc`)
+- Document resources (`docs://list`, `docs://{filename}`)
+- Slash command prompts (`/summarize`, `/rewrite-as-markdown`)
+- `@filename` syntax to include document content in queries
+- Tab completion for commands
 
 ## Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Anthropic API Key
 
 ## Setup
 
 ### Step 1: Configure the environment variables
 
-1. Create or edit the `.env` file in the project root and verify that the following variables are set correctly:
+Create or edit the `.env` file in the project root:
 
 ```
 ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key
+CLAUDE_MODEL=""       # e.g. claude-sonnet-4-5
 ```
 
 ### Step 2: Install dependencies
@@ -42,7 +52,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -e .
 ```
 
-4. Run the project
+4. Run the project:
 
 ```bash
 uv run main.py
@@ -60,10 +70,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 2. Install dependencies:
 
 ```bash
-pip install anthropic python-dotenv prompt-toolkit "mcp[cli]==1.8.0"
+pip install -e .
 ```
 
-3. Run the project
+3. Run the project:
 
 ```bash
 python main.py
@@ -73,11 +83,15 @@ python main.py
 
 ### Basic Interaction
 
-Simply type your message and press Enter to chat with the model.
+Type your message and press Enter to chat with Claude. Press `Ctrl+C` to exit.
+
+```
+> What is the capital of France?
+```
 
 ### Document Retrieval
 
-Use the @ symbol followed by a document ID to include document content in your query:
+Use the `@` symbol followed by a document filename to include document content in your query:
 
 ```
 > Tell me about @project-setup.md
@@ -85,7 +99,7 @@ Use the @ symbol followed by a document ID to include document content in your q
 
 ### Commands
 
-Use the / prefix to execute commands defined in the MCP server:
+Use the `/` prefix to execute commands defined in the MCP server:
 
 ```
 > /summarize project-setup.md
@@ -93,11 +107,11 @@ Use the / prefix to execute commands defined in the MCP server:
 
 Commands will auto-complete when you press Tab.
 
+## Document Store
+
+Documents are stored as individual files in a `docs/` directory at the project root. All MCP tools and resources read from and write to this directory directly — there is no in-memory store.
+
 ## Development
-
-### Adding New Documents
-
-Edit the `mcp_server.py` file to add new documents to the `docs` dictionary.
 
 ### Linting and Typing Check
 
