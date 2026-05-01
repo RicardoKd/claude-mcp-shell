@@ -53,5 +53,28 @@ def create_doc(filename: str, content: str) -> str:
     return f"Document '{filename}' created successfully."
 
 
+@mcp.tool()
+def edit_doc(
+    filename: str,
+    old_str: str,
+    new_str: str,
+) -> str:
+    path = os.path.join(DOCS_DIR, filename)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Document '{filename}' does not exist.")
+
+    with open(path, "r") as f:
+        content = f.read()
+
+    if old_str not in content:
+        raise ValueError(f"'{old_str}' not found in document '{filename}'.")
+
+    updated = content.replace(old_str, new_str, 1)
+    with open(path, "w") as f:
+        f.write(updated)
+
+    return f"Document '{filename}' updated successfully."
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
