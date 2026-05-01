@@ -76,5 +76,15 @@ def edit_doc(
     return f"Document '{filename}' updated successfully."
 
 
+@mcp.tool()
+def delete_doc(filename: str) -> str:
+    path = os.path.join(DOCS_DIR, filename)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Document '{filename}' does not exist.")
+
+    os.remove(path)
+    return f"Document '{filename}' deleted successfully."
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
