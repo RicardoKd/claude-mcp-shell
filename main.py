@@ -18,9 +18,7 @@ anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
 
 assert claude_model, "Error: CLAUDE_MODEL cannot be empty. Update .env"
-assert anthropic_api_key, (
-    "Error: ANTHROPIC_API_KEY cannot be empty. Update .env"
-)
+assert anthropic_api_key, "Error: ANTHROPIC_API_KEY cannot be empty. Update .env"
 
 
 async def main():
