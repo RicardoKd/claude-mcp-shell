@@ -1,6 +1,7 @@
 import os
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 DOCS_DIR = "docs"
 BINARY_EXTENSIONS = {
@@ -15,8 +16,13 @@ BINARY_EXTENSIONS = {
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
 
-@mcp.tool()
-def read_doc(filename: str) -> str:
+@mcp.tool(
+    name="read_doc",
+    description="Read and return the contents of a document from the document store.",
+)
+def read_doc(
+    filename: str = Field(description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."),
+) -> str:
     _, ext = os.path.splitext(filename)
     if ext.lower() in BINARY_EXTENSIONS:
         raise ValueError(
@@ -31,8 +37,14 @@ def read_doc(filename: str) -> str:
         return f.read()
 
 
-@mcp.tool()
-def create_doc(filename: str, content: str) -> str:
+@mcp.tool(
+    name="create_doc",
+    description="Create a new document in the document store with the given content.",
+)
+def create_doc(
+    filename: str = Field(description="Filename for the new document (e.g. 'notes.txt', 'report.md'). Must not already exist."),
+    content: str = Field(description="Text content to write into the new document."),
+) -> str:
     if os.path.basename(filename) != filename or filename.startswith("."):
         raise ValueError(f"Invalid filename: '{filename}'.")
 
@@ -53,11 +65,14 @@ def create_doc(filename: str, content: str) -> str:
     return f"Document '{filename}' created successfully."
 
 
-@mcp.tool()
+@mcp.tool(
+    name="edit_doc",
+    description="Replace the first exact occurrence of a string in a document with new text.",
+)
 def edit_doc(
-    filename: str,
-    old_str: str,
-    new_str: str,
+    filename: str = Field(description="Filename of the document to edit."),
+    old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
+    new_str: str = Field(description="The new text to insert in place of the old text."),
 ) -> str:
     path = os.path.join(DOCS_DIR, filename)
     if not os.path.exists(path):
@@ -76,8 +91,13 @@ def edit_doc(
     return f"Document '{filename}' updated successfully."
 
 
-@mcp.tool()
-def delete_doc(filename: str) -> str:
+@mcp.tool(
+    name="delete_doc",
+    description="Permanently delete a document from the document store.",
+)
+def delete_doc(
+    filename: str = Field(description="Filename of the document to delete."),
+) -> str:
     path = os.path.join(DOCS_DIR, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"Document '{filename}' does not exist.")

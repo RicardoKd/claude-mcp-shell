@@ -14,10 +14,18 @@ Filenames (e.g. `notes.txt`, `deposition.md`) serve as the document identifier t
 
 ## Tools
 
+All tools are registered with an explicit `name` and `description` on `@mcp.tool()`, and every argument uses `Field(description="...")` from Pydantic.
+
 ### `read_doc`
 
 ```python
-def read_doc(filename: str) -> str
+@mcp.tool(
+    name="read_doc",
+    description="Read and return the contents of a document from the document store.",
+)
+def read_doc(
+    filename: str = Field(description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."),
+) -> str
 ```
 
 - Read and return the content of `docs/{filename}`.
@@ -27,7 +35,14 @@ def read_doc(filename: str) -> str
 ### `create_doc`
 
 ```python
-def create_doc(filename: str, content: str) -> str
+@mcp.tool(
+    name="create_doc",
+    description="Create a new document in the document store with the given content.",
+)
+def create_doc(
+    filename: str = Field(description="Filename for the new document (e.g. 'notes.txt', 'report.md'). Must not already exist."),
+    content: str = Field(description="Text content to write into the new document."),
+) -> str
 ```
 
 - Create a new file at `docs/{filename}` with the given content.
@@ -37,10 +52,14 @@ def create_doc(filename: str, content: str) -> str
 ### `edit_doc`
 
 ```python
+@mcp.tool(
+    name="edit_doc",
+    description="Replace the first exact occurrence of a string in a document with new text.",
+)
 def edit_doc(
-    filename: str = Field(description="Filename of the document to edit"),
+    filename: str = Field(description="Filename of the document to edit."),
     old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
-    new_str: str = Field(description="The new text to insert in place of the old text.")
+    new_str: str = Field(description="The new text to insert in place of the old text."),
 ) -> str
 ```
 
@@ -51,7 +70,13 @@ def edit_doc(
 ### `delete_doc`
 
 ```python
-def delete_doc(filename: str) -> str
+@mcp.tool(
+    name="delete_doc",
+    description="Permanently delete a document from the document store.",
+)
+def delete_doc(
+    filename: str = Field(description="Filename of the document to delete."),
+) -> str
 ```
 
 - Remove `docs/{filename}` from disk.
