@@ -16,6 +16,22 @@ mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
 
 @mcp.tool()
+def read_doc(filename: str) -> str:
+    _, ext = os.path.splitext(filename)
+    if ext.lower() in BINARY_EXTENSIONS:
+        raise ValueError(
+            f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
+        )
+
+    path = os.path.join(DOCS_DIR, filename)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Document '{filename}' does not exist.")
+
+    with open(path, "r") as f:
+        return f.read()
+
+
+@mcp.tool()
 def create_doc(filename: str, content: str) -> str:
     if os.path.basename(filename) != filename or filename.startswith("."):
         raise ValueError(f"Invalid filename: '{filename}'.")
