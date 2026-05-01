@@ -208,3 +208,5 @@ class CliApp:
 
             except KeyboardInterrupt:
                 break
+            except Exception as e:
+                print(f"\nError: {e.message if hasattr(e, 'message') else e}")
