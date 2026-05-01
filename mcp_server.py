@@ -16,6 +16,14 @@ BINARY_EXTENSIONS = {
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
 
+def _check_binary(filename: str) -> None:
+    _, ext = os.path.splitext(filename)
+    if ext.lower() in BINARY_EXTENSIONS:
+        raise ValueError(
+            f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
+        )
+
+
 @mcp.tool(
     name="read_doc",
     description="Read and return the contents of a document from the document store.",
@@ -23,11 +31,7 @@ mcp = FastMCP("DocumentMCP", log_level="ERROR")
 def read_doc(
     filename: str = Field(description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."),
 ) -> str:
-    _, ext = os.path.splitext(filename)
-    if ext.lower() in BINARY_EXTENSIONS:
-        raise ValueError(
-            f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
-        )
+    _check_binary(filename)
 
     path = os.path.join(DOCS_DIR, filename)
     if not os.path.exists(path):
@@ -48,11 +52,7 @@ def create_doc(
     if os.path.basename(filename) != filename or filename.startswith("."):
         raise ValueError(f"Invalid filename: '{filename}'.")
 
-    _, ext = os.path.splitext(filename)
-    if ext.lower() in BINARY_EXTENSIONS:
-        raise ValueError(
-            f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
-        )
+    _check_binary(filename)
 
     path = os.path.join(DOCS_DIR, filename)
     if os.path.exists(path):
@@ -74,6 +74,7 @@ def edit_doc(
     old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
     new_str: str = Field(description="The new text to insert in place of the old text."),
 ) -> str:
+    _check_binary(filename)
     path = os.path.join(DOCS_DIR, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"Document '{filename}' does not exist.")
@@ -98,6 +99,7 @@ def edit_doc(
 def delete_doc(
     filename: str = Field(description="Filename of the document to delete."),
 ) -> str:
+    _check_binary(filename)
     path = os.path.join(DOCS_DIR, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"Document '{filename}' does not exist.")
