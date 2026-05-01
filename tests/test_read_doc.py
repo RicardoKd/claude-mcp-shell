@@ -42,3 +42,18 @@ def test_error_on_binary_docx(temp_docs_dir):
 def test_binary_check_is_case_insensitive(temp_docs_dir):
     with pytest.raises(ValueError, match="is a binary format"):
         read_doc("FILE.PDF")
+
+
+def test_error_on_path_traversal(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        read_doc("../evil.txt")
+
+
+def test_error_on_absolute_path(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        read_doc("/etc/passwd")
+
+
+def test_error_on_hidden_file(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        read_doc(".hidden")

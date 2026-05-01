@@ -49,3 +49,18 @@ def test_only_first_occurrence_replaced(temp_docs_dir):
     (temp_docs_dir / "notes.txt").write_text("aaa aaa aaa")
     edit_doc("notes.txt", "aaa", "bbb")
     assert (temp_docs_dir / "notes.txt").read_text() == "bbb aaa aaa"
+
+
+def test_error_on_path_traversal(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        edit_doc("../evil.txt", "foo", "bar")
+
+
+def test_error_on_absolute_path(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        edit_doc("/etc/passwd", "foo", "bar")
+
+
+def test_error_on_hidden_file(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        edit_doc(".hidden", "foo", "bar")

@@ -24,6 +24,20 @@ def _check_binary(filename: str) -> None:
         )
 
 
+def _doc_path(filename: str) -> str:
+    if os.path.basename(filename) != filename or filename.startswith("."):
+        raise ValueError(f"Invalid filename: '{filename}'.")
+    _check_binary(filename)
+    return os.path.join(DOCS_DIR, filename)
+
+
+def _require_exists(filename: str) -> str:
+    path = _doc_path(filename)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Document '{filename}' does not exist.")
+    return path
+
+
 @mcp.tool(
     name="read_doc",
     description="Read and return the contents of a document from the document store.",
@@ -31,12 +45,7 @@ def _check_binary(filename: str) -> None:
 def read_doc(
     filename: str = Field(description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."),
 ) -> str:
-    _check_binary(filename)
-
-    path = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Document '{filename}' does not exist.")
-
+    path = _require_exists(filename)
     with open(path, "r") as f:
         return f.read()
 
@@ -49,12 +58,7 @@ def create_doc(
     filename: str = Field(description="Filename for the new document (e.g. 'notes.txt', 'report.md'). Must not already exist."),
     content: str = Field(description="Text content to write into the new document."),
 ) -> str:
-    if os.path.basename(filename) != filename or filename.startswith("."):
-        raise ValueError(f"Invalid filename: '{filename}'.")
-
-    _check_binary(filename)
-
-    path = os.path.join(DOCS_DIR, filename)
+    path = _doc_path(filename)
     if os.path.exists(path):
         raise FileExistsError(f"Document '{filename}' already exists.")
 
@@ -74,11 +78,7 @@ def edit_doc(
     old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
     new_str: str = Field(description="The new text to insert in place of the old text."),
 ) -> str:
-    _check_binary(filename)
-    path = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Document '{filename}' does not exist.")
-
+    path = _require_exists(filename)
     with open(path, "r") as f:
         content = f.read()
 
@@ -99,11 +99,7 @@ def edit_doc(
 def delete_doc(
     filename: str = Field(description="Filename of the document to delete."),
 ) -> str:
-    _check_binary(filename)
-    path = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Document '{filename}' does not exist.")
-
+    path = _require_exists(filename)
     os.remove(path)
     return f"Document '{filename}' deleted successfully."
 

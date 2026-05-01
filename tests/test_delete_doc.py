@@ -24,3 +24,18 @@ def test_happy_path_deletes_file(temp_docs_dir):
 def test_error_if_file_does_not_exist(temp_docs_dir):
     with pytest.raises(FileNotFoundError, match="Document 'missing.txt' does not exist."):
         delete_doc("missing.txt")
+
+
+def test_error_on_path_traversal(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        delete_doc("../evil.txt")
+
+
+def test_error_on_absolute_path(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        delete_doc("/etc/passwd")
+
+
+def test_error_on_hidden_file(temp_docs_dir):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        delete_doc(".hidden")
