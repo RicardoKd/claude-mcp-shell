@@ -1,10 +1,13 @@
+import datetime
+import json
+import mimetypes
 import os
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from core import doc_store
-from core.doc_store import doc_path, require_exists
+from core.doc_store import doc_path, is_binary, require_exists
 
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
@@ -14,7 +17,9 @@ mcp = FastMCP("DocumentMCP", log_level="ERROR")
     description="Read and return the contents of a document from the document store.",
 )
 def read_doc(
-    filename: str = Field(description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."),
+    filename: str = Field(
+        description="Filename of the document to read (e.g. 'notes.txt', 'report.md')."
+    ),
 ) -> str:
     path = require_exists(filename)
     with open(path, "r") as f:
@@ -26,7 +31,9 @@ def read_doc(
     description="Create a new document in the document store with the given content.",
 )
 def create_doc(
-    filename: str = Field(description="Filename for the new document (e.g. 'notes.txt', 'report.md'). Must not already exist."),
+    filename: str = Field(
+        description="Filename for the new document (e.g. 'notes.txt', 'report.md'). Must not already exist."
+    ),
     content: str = Field(description="Text content to write into the new document."),
 ) -> str:
     path = doc_path(filename)
@@ -46,8 +53,12 @@ def create_doc(
 )
 def edit_doc(
     filename: str = Field(description="Filename of the document to edit."),
-    old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
-    new_str: str = Field(description="The new text to insert in place of the old text."),
+    old_str: str = Field(
+        description="The text to replace. Must match exactly, including whitespace."
+    ),
+    new_str: str = Field(
+        description="The new text to insert in place of the old text."
+    ),
 ) -> str:
     path = require_exists(filename)
     with open(path, "r") as f:
@@ -73,6 +84,39 @@ def delete_doc(
     path = require_exists(filename)
     os.remove(path)
     return f"Document '{filename}' deleted successfully."
+
+
+@mcp.resource(
+    "docs://list",
+    mime_type="application/json",
+    description="List metadata for all supported (non-binary) documents in the document store.",
+)
+def list_docs() -> str:
+    docs_dir = doc_store.DOCS_DIR
+    entries = []
+    if os.path.isdir(docs_dir):
+        for filename in os.listdir(docs_dir):
+            if is_binary(filename):
+                continue
+            path = os.path.join(docs_dir, filename)
+            if not os.path.isfile(path):
+                continue
+            stat = os.stat(path)
+            updated_at = datetime.datetime.fromtimestamp(
+                stat.st_mtime, tz=datetime.timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            mime_type, _ = mimetypes.guess_type(filename)
+            entries.append(
+                {
+                    "filename": filename,
+                    "size_bytes": stat.st_size,
+                    "updated_at": updated_at,
+                    "mime_type": mime_type or "text/plain",
+                }
+            )
+
+    entries.sort(key=lambda e: e["filename"])
+    return json.dumps(entries)
 
 
 if __name__ == "__main__":
