@@ -12,6 +12,8 @@ Filenames (e.g. `notes.txt`, `deposition.md`) serve as the document identifier t
 
 **Supported formats:** plain text files only (e.g. `.md`, `.txt`, `.json`, `.csv`). Binary formats (`.pdf`, `.docx`, etc.) are not supported. Any tool or resource that attempts to read or write a binary file must raise an error: `"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."`
 
+**Missing-file error.** Any tool or resource that operates on a non-existent document must raise an error with the exact message: `"Document '{filename}' does not exist."`
+
 ## Tools
 
 All tools are registered with an explicit `name` and `description` on `@mcp.tool()`, and every argument uses `Field(description="...")` from Pydantic.
@@ -88,12 +90,32 @@ def delete_doc(
 ### `docs://list`
 
 - Reads the `docs/` directory on disk.
-- Returns all filenames as newline-separated plain text: `"deposition.md\nreport.pdf\n..."`
+- Returns a JSON array of metadata objects, one per supported file. Resource `mimeType` must be `"application/json"`, and the array must be serialized to the content body via `json.dumps(...)` so the client's `json.loads` round-trip succeeds.
+- Entries are sorted by `filename` ascending.
+- **Binary files are skipped entirely** — they must not appear in the list. Filtering uses a non-raising predicate `is_binary(filename) -> bool` exposed by `core.doc_store` (sharing the `BINARY_EXTENSIONS` set with `check_binary`); do not call the raising helper for control flow.
+- Each object has the following fields:
+  - `filename` (str): e.g. `"notes.md"`.
+  - `size_bytes` (int): file size in bytes.
+  - `updated_at` (str): last-modified time as an ISO-8601 UTC timestamp with the literal `Z` suffix, formatted via `strftime("%Y-%m-%dT%H:%M:%SZ")` from `st_mtime` converted to UTC. Whole-second precision; sub-seconds are truncated.
+  - `mime_type` (str): derived from the file extension (e.g. `"text/markdown"`, `"text/plain"`, `"application/json"`, `"text/csv"`). **Informational only** — intended for client-side UI use (icons, filtering). Document content is always served via `docs://{filename}` as `text/plain` regardless of this value.
+- Example:
+
+  ```json
+  [
+    {
+      "filename": "notes.md",
+      "size_bytes": 1432,
+      "updated_at": "2026-05-01T14:08:02Z",
+      "mime_type": "text/markdown"
+    }
+  ]
+  ```
 
 ### `docs://{filename}`
 
-- Return the content of `docs/{filename}`.
-- Raise an error if the file does not exist.
+- Return the content of `docs/{filename}` as plain text. Resource `mimeType` must be `"text/plain"` for all returned files, regardless of extension.
+- Must raise the standard missing-file error if the file does not exist (see Document Store).
+- Must raise the standard binary-format error if `filename` has a binary extension (see Document Store).
 - **Purpose:** embedding document content directly into model context.
 
 > Both `read_doc` (tool) and `docs://{filename}` (resource) return doc content. The distinction is intentional: the resource is for embedding content into model context; the tool is for programmatic access in agentic workflows.

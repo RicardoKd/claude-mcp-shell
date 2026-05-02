@@ -11,9 +11,13 @@ BINARY_EXTENSIONS = {
 }
 
 
-def check_binary(filename: str) -> None:
+def is_binary(filename: str) -> bool:
     _, ext = os.path.splitext(filename)
-    if ext.lower() in BINARY_EXTENSIONS:
+    return ext.lower() in BINARY_EXTENSIONS
+
+
+def check_binary(filename: str) -> None:
+    if is_binary(filename):
         raise ValueError(
             f"'{filename}' is a binary format and is not supported. Use a plain text format such as .md or .txt."
         )
