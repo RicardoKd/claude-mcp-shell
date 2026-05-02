@@ -4,13 +4,13 @@ import pytest
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-import mcp_server
+from core import doc_store
 from mcp_server import read_doc
 
 
 @pytest.fixture(autouse=True)
 def temp_docs_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr(mcp_server, "DOCS_DIR", str(tmp_path))
+    monkeypatch.setattr(doc_store, "DOCS_DIR", str(tmp_path))
     yield tmp_path
 
 

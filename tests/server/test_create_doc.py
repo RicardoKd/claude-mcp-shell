@@ -4,13 +4,13 @@ import pytest
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-import mcp_server
+from core import doc_store
 from mcp_server import create_doc
 
 
 @pytest.fixture(autouse=True)
 def temp_docs_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr(mcp_server, "DOCS_DIR", str(tmp_path))
+    monkeypatch.setattr(doc_store, "DOCS_DIR", str(tmp_path))
     yield tmp_path
 
 
@@ -64,7 +64,7 @@ def test_error_on_hidden_file(temp_docs_dir):
 
 def test_creates_docs_dir_if_missing(tmp_path, monkeypatch):
     docs_path = tmp_path / "newdocs"
-    monkeypatch.setattr(mcp_server, "DOCS_DIR", str(docs_path))
+    monkeypatch.setattr(doc_store, "DOCS_DIR", str(docs_path))
     result = create_doc("notes.txt", "content")
     assert result == "Document 'notes.txt' created successfully."
     assert (docs_path / "notes.txt").read_text() == "content"
