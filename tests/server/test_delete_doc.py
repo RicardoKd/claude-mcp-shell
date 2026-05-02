@@ -2,7 +2,7 @@ import os
 import pytest
 
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 import mcp_server
 from mcp_server import delete_doc
