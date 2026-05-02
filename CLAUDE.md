@@ -119,3 +119,47 @@ def summarize_doc(filename: str)
 - Read the content of `docs/{filename}`.
 - If the file does not exist, return: `"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"`
 - Otherwise return a prompt asking the model to summarize the content.
+
+## MCP Client Implementation
+
+`MCPClient` (in `mcp_client.py`) wraps an MCP `ClientSession` and exposes typed async methods over it. All implementations follow these invariants:
+
+- Every method acquires the session through `self.session()`, which raises `ConnectionError` if `connect()` has not been called.
+- Every method is `async` and `await`s the underlying SDK call exactly once.
+- SDK return types are returned directly. The client must not catch, remap, or repackage server-side errors — they propagate as `McpError` to the caller.
+- No method mutates client state.
+
+### `list_tools() -> list[types.Tool]`
+
+- `result = await self.session().list_tools()`
+- Return `result.tools`.
+
+### `call_tool(tool_name: str, tool_input: dict) -> types.CallToolResult | None`
+
+- Return `await self.session().call_tool(tool_name, tool_input)`.
+- Pass `tool_input` as-is to the SDK's `arguments` parameter; do not copy, validate, or re-key.
+- Return value is whatever the SDK returns; `None` is preserved only if the SDK returns it.
+
+### `list_prompts() -> list[types.Prompt]`
+
+- `result = await self.session().list_prompts()`
+- Return `result.prompts`.
+
+### `get_prompt(prompt_name: str, args: dict[str, str]) -> list[types.PromptMessage]`
+
+- Update the annotation to `-> list[types.PromptMessage]`.
+- `result = await self.session().get_prompt(prompt_name, args)`
+- Return `result.messages`.
+
+### `read_resource(uri: str) -> Any`
+
+- `result = await self.session().read_resource(uri)`
+- Read the first item: `content = result.contents[0]`. The server only ever returns a single content item for `docs://list` and `docs://{filename}`.
+- If `content.mimeType == "application/json"`, return `json.loads(content.text)`.
+- Otherwise return `content.text` unchanged.
+- Add `import json` to the module imports.
+- Binary (`BlobResourceContents`) is never expected because the server rejects binary filenames; no special handling is required.
+
+### Out of scope
+
+- Retries, timeouts, logging, caching, and reconnection are explicitly excluded — the SDK and the existing `AsyncExitStack` lifecycle handle these.
