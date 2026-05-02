@@ -119,5 +119,16 @@ def list_docs() -> str:
     return json.dumps(entries)
 
 
+@mcp.resource(
+    "docs://{filename}",
+    mime_type="text/plain",
+    description="Return the content of a document as plain text for embedding in model context.",
+)
+def read_doc_resource(filename: str) -> str:
+    path = require_exists(filename)
+    with open(path, "r") as f:
+        return f.read()
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
