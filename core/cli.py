@@ -99,13 +99,11 @@ class UnifiedCompleter(Completer):
                 doc_prefix = parts[-1]
 
                 for resource in self.resources:
-                    if "id" in resource and resource["id"].lower().startswith(
-                        doc_prefix.lower()
-                    ):
+                    if resource.lower().startswith(doc_prefix.lower()):
                         yield Completion(
-                            resource["id"],
+                            resource,
                             start_position=-len(doc_prefix),
-                            display=resource["id"],
+                            display=resource,
                         )
                 return
 
