@@ -175,12 +175,11 @@ def summarize_doc(filename: str)
 
 ### `read_resource(uri: str) -> Any`
 
-- `result = await self.session().read_resource(uri)`
-- Read the first item: `content = result.contents[0]`. The server only ever returns a single content item for `docs://list` and `docs://{filename}`.
-- If `content.mimeType == "application/json"`, return `json.loads(content.text)`.
-- Otherwise return `content.text` unchanged.
-- Add `import json` to the module imports.
-- Binary (`BlobResourceContents`) is never expected because the server rejects binary filenames; no special handling is required.
+- `result = await self.session().read_resource(AnyUrl(uri))`. The SDK's `read_resource` is typed to accept a pydantic `AnyUrl`, so wrap the incoming string before passing it through.
+- Read the first item: `resource = result.contents[0]`. The server only ever returns a single content item for `docs://list` and `docs://{filename}`.
+- Narrow on `isinstance(resource, types.TextResourceContents)`. The server never returns `BlobResourceContents` because it rejects binary filenames, so this is a defensive type guard rather than a real branch — the non-text path falls through and the method returns `None` implicitly.
+- Inside the text branch: if `resource.mimeType == "application/json"`, return `json.loads(resource.text)`. Otherwise return `resource.text` unchanged.
+- Add `import json` and `from pydantic import AnyUrl` to the module imports.
 
 ### Out of scope
 
