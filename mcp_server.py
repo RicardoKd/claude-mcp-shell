@@ -158,5 +158,29 @@ def rewrite_as_markdown(
     return [base.UserMessage(prompt)]
 
 
+@mcp.prompt(
+    name="summarize-doc",
+    description="Summarizes the contents of a document.",
+)
+def summarize_doc(
+    filename: str = Field(description="Filename of the document to summarize."),
+) -> list[base.Message]:
+    check_binary(filename)
+    if not exists(filename):
+        return [
+            base.UserMessage(
+                f"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"
+            )
+        ]
+
+    prompt = f"""
+        Fetch the contents of the document <filename>{filename}</filename> via the
+        `docs://{filename}` resource. Produce a concise summary of the content of
+        <filename>{filename}</filename>, capturing the key points and main ideas.
+    """
+
+    return [base.UserMessage(prompt)]
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
