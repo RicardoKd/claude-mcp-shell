@@ -29,9 +29,9 @@ class CliChat(Chat):
         return await self.doc_client.read_resource(f"docs://{doc_id}")
 
     async def get_prompt(
-        self, command: str, doc_id: str
+        self, command: str, filename: str
     ) -> list[PromptMessage]:
-        return await self.doc_client.get_prompt(command, {"doc_id": doc_id})
+        return await self.doc_client.get_prompt(command, {"filename": filename})
 
     async def _extract_resources(self, query: str) -> str:
         mentions = [word[1:] for word in query.split() if word.startswith("@")]
@@ -57,7 +57,7 @@ class CliChat(Chat):
         command = words[0].replace("/", "")
 
         messages = await self.doc_client.get_prompt(
-            command, {"doc_id": words[1]}
+            command, {"filename": words[1]}
         )
 
         self.messages += convert_prompt_messages_to_message_params(messages)
