@@ -122,25 +122,48 @@ def delete_doc(
 
 ## Prompts
 
+All prompts are registered with an explicit `name` and `description` on `@mcp.prompt()`, and every argument uses `Field(description="...")` from Pydantic. Each prompt returns `list[base.Message]` (imported from `mcp.server.fastmcp.prompts`) — in practice a single-element list containing one `base.UserMessage`.
+
+The registered `name` is kebab-case (the wire identifier the client sees) and is intentionally distinct from the snake_case Python function name.
+
+**Filename handling.** Each prompt validates `filename` in two stages, using helpers exposed by `core.doc_store`:
+
+1. **Binary rejection (raising).** Call `check_binary(filename)` first. If `filename` has a binary extension, this raises the standard binary-format error (see Document Store). Prompts must not suggest operating on binary files.
+2. **Missing-file (non-raising).** Then check `exists(filename) -> bool`, a non-raising predicate. If the file is missing, return the helpful `base.UserMessage` shown in each prompt's bullets — do **not** raise the missing-file error. (This is why prompts use `exists` rather than the tools' raising `require_exists`: the missing-file outcome is a *prompt body*, not a server-side exception.)
+
+**Prompt body.** The body does not read or embed the document's content directly. Instead it instructs the model to fetch the document via the `docs://{filename}` resource and, where applicable, to apply changes via the `edit_doc` tool. Routing reads through the resource means the binary-format guard is enforced a second time on the model side. The filename must appear inside `<filename>...</filename>` tags within the prompt body so it is unambiguous to the model.
+
 ### `rewrite-as-markdown`
 
 ```python
-def rewrite_as_markdown(filename: str)
+@mcp.prompt(
+    name="rewrite-as-markdown",
+    description="Rewrites the contents of a document in Markdown format.",
+)
+def rewrite_as_markdown(
+    filename: str = Field(description="Filename of the document to rewrite."),
+) -> list[base.Message]:
 ```
 
-- Read the content of `docs/{filename}`.
-- If the file does not exist, return: `"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"`
-- Otherwise return a prompt asking the model to rewrite the content in markdown format.
+- If `filename` has a binary extension, raise the standard binary-format error (see Document Store) — via `check_binary(filename)`.
+- Else if `docs/{filename}` does not exist (per `exists(filename)`), return `[base.UserMessage("The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'")]`.
+- Otherwise return `[base.UserMessage(prompt)]` where `prompt` instructs the model to fetch the document via the `docs://{filename}` resource, reformat it with Markdown syntax — adding headers, bullet points, tables, and other structure as appropriate — and apply the rewrite via the `edit_doc` tool. The filename must appear inside `<filename>...</filename>` tags within the prompt body.
 
-### `summarize_doc`
+### `summarize-doc`
 
 ```python
-def summarize_doc(filename: str)
+@mcp.prompt(
+    name="summarize-doc",
+    description="Summarizes the contents of a document.",
+)
+def summarize_doc(
+    filename: str = Field(description="Filename of the document to summarize."),
+) -> list[base.Message]:
 ```
 
-- Read the content of `docs/{filename}`.
-- If the file does not exist, return: `"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"`
-- Otherwise return a prompt asking the model to summarize the content.
+- If `filename` has a binary extension, raise the standard binary-format error (see Document Store) — via `check_binary(filename)`.
+- Else if `docs/{filename}` does not exist (per `exists(filename)`), return `[base.UserMessage("The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'")]`.
+- Otherwise return `[base.UserMessage(prompt)]` where `prompt` instructs the model to fetch the document via the `docs://{filename}` resource and produce a concise summary of its content. The filename must appear inside `<filename>...</filename>` tags within the prompt body.
 
 ## MCP Client Implementation
 

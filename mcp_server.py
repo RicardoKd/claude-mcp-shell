@@ -4,10 +4,11 @@ import mimetypes
 import os
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.prompts import base
 from pydantic import Field
 
 from core import doc_store
-from core.doc_store import doc_path, is_binary, require_exists
+from core.doc_store import check_binary, doc_path, exists, is_binary, require_exists
 
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
@@ -128,6 +129,33 @@ def read_doc_resource(filename: str) -> str:
     path = require_exists(filename)
     with open(path, "r") as f:
         return f.read()
+
+
+@mcp.prompt(
+    name="rewrite-as-markdown",
+    description="Rewrites the contents of a document in Markdown format.",
+)
+def rewrite_as_markdown(
+    filename: str = Field(description="Filename of the document to rewrite."),
+) -> list[base.Message]:
+    check_binary(filename)
+    if not exists(filename):
+        return [
+            base.UserMessage(
+                f"The document '{filename}' does not exist. To create it, you could prompt: 'Create a new document called {filename} with the following content: ...'"
+            )
+        ]
+
+    prompt = f"""
+        Fetch the contents of the document <filename>{filename}</filename> via the
+        `docs://{filename}` resource. Reformat the content using Markdown syntax —
+        add headers, bullet points, tables, and other structure as appropriate.
+        Then apply the rewrite by calling the `edit_doc` tool on
+        <filename>{filename}</filename>, replacing the original text with the new
+        Markdown-formatted version.
+    """
+
+    return [base.UserMessage(prompt)]
 
 
 if __name__ == "__main__":

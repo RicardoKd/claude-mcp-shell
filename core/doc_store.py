@@ -16,6 +16,10 @@ def is_binary(filename: str) -> bool:
     return ext.lower() in BINARY_EXTENSIONS
 
 
+def exists(filename: str) -> bool:
+    return os.path.isfile(os.path.join(DOCS_DIR, filename))
+
+
 def check_binary(filename: str) -> None:
     if is_binary(filename):
         raise ValueError(
